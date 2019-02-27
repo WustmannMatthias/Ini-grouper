@@ -6,10 +6,13 @@ import json
 
 parser = argparse.ArgumentParser(description="Regroup phing variables by values")
 parser.add_argument("ini_files", help="ini file(s), can be a file or a directory. Current directory by default", nargs='?', default=os.getcwd())
-parser.add_argument("-o", "--output_file", help="file to store results", metavar="output_file")
+parser.add_argument("-g", "--group", help="k or key to group per key, v or value to group per value", required=True, choices=['k', 'key', 'v', 'value'])
+parser.add_argument("-o", "--output_file", help="file to store results. Will be created if it doesn't exist", metavar="output_file")
+
 
 
 def main():
+	# Parse arguments and prepare files list
 	args = parser.parse_args()
 	ini_files = args.ini_files
 
@@ -17,11 +20,8 @@ def main():
 		print(ini_files + " doesn't exist. Program end.")
 		exit()
 
-	
-
 	files = list()
 	hashmap = dict()
-	regex = "(?P<key>[^=]+)=(?P<value>[^=]+)"
 
 	if os.path.isdir(ini_files):
 		directory = os.path.abspath(ini_files)
@@ -31,8 +31,18 @@ def main():
 	elif os.path.isfile(ini_files):
 		files = [os.path.abspath(ini_files)]
 
+
 	
-	# Parsing
+	# Parse and group
+	if args.group in ['k', 'key']:
+		group = {'key': 'key', 'value': 'value'}
+	elif args.group in ['v', 'value']:
+		group = {'key': 'value', 'value': 'key'}
+	else:
+		raise Error("Incorrect value for argument <group>")
+
+	
+	regex = "(?P<key>[^=]+)=(?P<value>[^=]+)"
 	for file in files:
 		try:
 			with open(file, 'r') as fh:
@@ -44,16 +54,16 @@ def main():
 		for line in lines:
 			result = re.match(regex, line)
 			if result:
-				key 	= result.group('key')
-				value 	= result.group('value')
+				key 	= result.group(group['key'])
+				value 	= result.group(group['value'])
 
-				if value in hashmap.keys():
-					if key in hashmap[value].keys():
-						hashmap[value][key] += 1
+				if key in hashmap.keys():
+					if value in hashmap[key].keys():
+						hashmap[key][value] += 1
 					else:
-						hashmap[value][key] = 1
+						hashmap[key][value] = 1
 				else:
-					hashmap[value] = {key: 1}
+					hashmap[key] = {value: 1}
 
 
 	# Prepare output
