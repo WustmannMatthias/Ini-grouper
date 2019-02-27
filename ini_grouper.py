@@ -5,23 +5,41 @@ import re
 import json
 
 parser = argparse.ArgumentParser(description="Regroup phing variables by values")
-parser.add_argument("directory", help="directory containing phing ini files", nargs='?', default=os.getcwd())
+parser.add_argument("ini_files", help="ini file(s), can be a file or a directory. Current directory by default", nargs='?', default=os.getcwd())
 parser.add_argument("-o", "--output_file", help="file to store results", metavar="output_file")
 
 
 def main():
 	args = parser.parse_args()
-	directory = args.directory
+	ini_files = args.ini_files
 
+	if not os.path.exists(ini_files):
+		print(ini_files + " doesn't exist. Program end.")
+		exit()
+
+	
+
+	files = list()
+	hashmap = dict()
 	regex = "(?P<key>[^=]+)=(?P<value>[^=]+)"
 
-	hashmap = dict()
-	files = os.listdir(directory)
+	if os.path.isdir(ini_files):
+		directory = os.path.abspath(ini_files)
+		for file in os.listdir(directory):
+			files.append(directory + '/' + file)
+	
+	elif os.path.isfile(ini_files):
+		files = [os.path.abspath(ini_files)]
 
+	
+	# Parsing
 	for file in files:
-		fullpath = directory + '/' + file
-		with open(fullpath, 'r') as fh:
-			lines = fh.read().split('\n')
+		try:
+			with open(file, 'r') as fh:
+				lines = fh.read().split('\n')
+		except:
+			print("Couldn't open file " + file + ". Ignored.")
+			continue
 
 		for line in lines:
 			result = re.match(regex, line)
@@ -37,8 +55,8 @@ def main():
 				else:
 					hashmap[value] = {key: 1}
 
-	#print(json.dumps(hashmap, indent=4))
 
+	# Prepare output
 	text_output = str(len(hashmap.keys())) + " different values analysed : \n\n"
 
 	for value, proposals in hashmap.items():
