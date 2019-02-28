@@ -8,16 +8,18 @@ import re
 import json
 
 parser = argparse.ArgumentParser(description="Regroup phing variables by values")
-parser.add_argument("ini_files", help="ini file(s), can be a file or a directory. Current directory by default", nargs='?', default=os.getcwd())
+parser.add_argument("inifiles", help="ini file(s), can be a file or a directory. Current directory by default", nargs='?', default=os.getcwd())
 parser.add_argument("-g", "--group", help="k or key to group per key, v or value to group per value", required=True, choices=['k', 'key', 'v', 'value'])
-parser.add_argument("-o", "--output_file", help="file to store results. Will be created if it doesn't exist", metavar="output_file")
+parser.add_argument("-o", "--output-file", help="file to store results. Will be created if it doesn't exist", dest="output_file")
+parser.add_argument("-j", "--json-output", help="file to store results. Will be created if it doesn't exist", dest="json_output", action="store_true")
+
 
 
 
 def main():
 	# Parse arguments and prepare files list
 	args = parser.parse_args()
-	ini_files = args.ini_files
+	ini_files = args.inifiles
 
 	if not os.path.exists(ini_files):
 		print(ini_files + " doesn't exist. Program end.")
@@ -69,24 +71,31 @@ def main():
 					hashmap[key] = {value: 1}
 
 
+
 	# Prepare output
-	text_output = str(len(hashmap.keys())) + " different values analysed : \n\n"
+	text_output = str()
+	if args.json_output:
+		text_output = json.dumps(hashmap, indent=4)
+	else:
+		text_output = str(len(hashmap.keys())) + " different values analysed : \n\n"
 
-	for value, proposals in hashmap.items():
-		sorted_proposals = sorted(proposals.items(), key=lambda kv: kv[1], reverse=True)
-		
-		text_output += str(value) + "\n"
-		text_output += "Prefered variable name : \t" + str(sorted_proposals[0][0]) + " (" + str(sorted_proposals[0][1]) + " votes) "
+		for value, proposals in hashmap.items():
+			sorted_proposals = sorted(proposals.items(), key=lambda kv: kv[1], reverse=True)
+			
+			text_output += str(value) + "\n"
+			text_output += "Prefered variable name : \t" + str(sorted_proposals[0][0]) + " (" + str(sorted_proposals[0][1]) + " votes) "
 
-		if len(sorted_proposals) > 1:
-			text_output += "\n"
-			text_output += "Other proposals : \t\t"
-			for i in range(1, len(sorted_proposals)):
-				text_output += str(sorted_proposals[i][0]) + " (" + str(sorted_proposals[i][1]) + " votes) \n\t\t\t\t"
-		text_output += "\n\n"
+			if len(sorted_proposals) > 1:
+				text_output += "\n"
+				text_output += "Other proposals : \t\t"
+				for i in range(1, len(sorted_proposals)):
+					text_output += str(sorted_proposals[i][0]) + " (" + str(sorted_proposals[i][1]) + " votes) \n\t\t\t\t"
+			text_output += "\n\n"
 
-	text_output += "\n"
+		text_output += "\n"
 
+
+	# Write output
 	if args.output_file:
 		with open(args.output_file, 'w') as fh:
 			fh.write(text_output)
