@@ -7,11 +7,11 @@ import os
 import re
 import json
 
-parser = argparse.ArgumentParser(description="Regroup phing variables by values")
+parser = argparse.ArgumentParser(description="Group ini files by key or by value")
 parser.add_argument("inifiles", help="ini file(s), can be a file or a directory. Current directory by default", nargs='?', default=os.getcwd())
 parser.add_argument("-g", "--group", help="k or key to group per key, v or value to group per value", required=True, choices=['k', 'key', 'v', 'value'])
 parser.add_argument("-o", "--output-file", help="file to store results. Will be created if it doesn't exist", dest="output_file")
-parser.add_argument("-j", "--json-output", help="file to store results. Will be created if it doesn't exist", dest="json_output", action="store_true")
+parser.add_argument("-j", "--json-output", help="json output", dest="json_output", action="store_true")
 
 
 
